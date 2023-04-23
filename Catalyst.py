@@ -81,7 +81,7 @@ def check_events():
             click[i]=0
 slevel=0
 menu=1
-level=1
+level=0
 level_choice=[0,0,0]
 p=Player()
 b_in=0
