@@ -5,7 +5,6 @@ Ssheet=pygame.image.load("Sprites.xcf")
 class Player:
     def __init__(self):
         self.cores=[0 for i in range(10)]
-        self.cores[0]=30
         self.level=0
         self.sprite=pygame.Surface((20,20))
         self.sprite.set_colorkey((0,0,0))
