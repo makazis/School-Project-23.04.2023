@@ -2,7 +2,7 @@ from math import *
 from random import *
 import pygame
 from Player import *
-from NPCs import *
+#from NPCs import *
 from time import *
 pygame.init()
 win=pygame.display.set_mode((0,0))
@@ -16,24 +16,23 @@ pygame.mouse.set_visible(False)
 Level_banner=[pygame.transform.scale(Ssheet.subsurface(0,30+i*50,300,50),(1800,300)) for i in range(10)]
 Song_offset=[0.2,1,1]
 Graveyard_S=pygame.transform.scale(Ssheet.subsurface((330,80,30,30)),(300,300))
+Graveyard_S2=pygame.Surface((1800,900))
+Graveyard_S2.fill((0,225,155))
+Graveyard_S2.set_alpha(0)
 """
-5 levels: then boss, then 5 levels, then boss again, then 5 more levels, then boss, then 5 levels, then the final boss
 Levels are as follows:
 1. Cheetahmen (Action 52)
-Terraria solar theme, kind of
-Name: Warning
+Name: Mayhem
 Difficulty: 4/10
 BPM=150
 
 2. Fantasie imprmptu(meganeko remix)
-Cyan Souls theme, like in picture
 Name: Graveyard
 Difficulty: 8/10
 BPM=400
 
-3. The Hallucination?
-Confusing Stuff a lot
-Name: Hallucination
+3. CCremix
+Name: The Funny
 Difficulty: 10/10
 
 4. Es nevaru but balts, Kudo nor hardstyle remix
@@ -81,7 +80,7 @@ def check_events():
             click[i]=0
 slevel=0
 menu=1
-level=0
+level=6
 level_choice=[0,0,0]
 p=Player()
 b_in=0
@@ -123,9 +122,12 @@ while run:
                     if slevel==0: enemies=[Entity(0,0) for i in range(4+level)]
                     elif slevel==1:
                         enemies=[Entity(1,0) for i in range(3+level)]
-                        enemies.append(Entity(1,1))
+                        enemies.append(Entity(1,1,level))
+                        for i in range(level):
+                            enemies.append(Entity(1,3,level))
                         S.set_colorkey((0,0,0))
-                    
+                        for i in range(randint(2,4)):
+                            enemies.append(Entity(1,2))
     elif menu==0: # fight mode
         if slevel==0:
             tpassed=time()-start_time
@@ -178,17 +180,18 @@ while run:
                 esprite=pygame.transform.rotate(i.sprite,270-i.angle/pi*180)
                 esprite.set_colorkey(i.sprite.get_colorkey())
                 S.blit(esprite,(i.x-esprite.get_width()/2,i.y-esprite.get_height()/2))
-                Bmask=pygame.mask.from_surface(esprite)
-                if Bmask.overlap(Pmask,(i.x-p.x,i.y-p.y)):
-                    p.hp-=10
-                    i.despawn(projectiles)
+                if i.level==0 and i.tips==0:
+                    Bmask=pygame.mask.from_surface(esprite)
+                    if Bmask.overlap(Pmask,(i.x-p.x,i.y-p.y)):
+                        p.hp-=10
+                        i.despawn(projectiles)
             if p.hp<=0:
                 run=False
                 print("Skill Issue")
                 pass
             else:
                 pygame.draw.rect(S,(255-(p.hp/100*255),(p.hp/100*255),0),(0,0,20,p.hp))
-            p.exist(keys,mouse_down,mouse_pos,click,enemies)
+            p.exist(keys,mouse_down,mouse_pos,click,enemies,projectiles)
             psprite=pygame.transform.rotate(p.sprite,90-p.angle/pi*180)
             S.blit(psprite,(p.x-psprite.get_width()/2,p.y-psprite.get_height()/2))
             if tpassed>133:
@@ -197,33 +200,49 @@ while run:
                 menu=1
                 enemies=[]
                 projectiles=[]
+
+
+                
         if slevel==1:
             S.fill((0,0,0))
             S2.fill((0,0,0))
             tpassed=time()-start_time
             pbl=beat_listener
-            beat_listener=round(round(tpassed,2)%0.8,2)
+            beat_listener=round(round(tpassed,2)%0.6,2)
+            Pmask=pygame.mask.from_surface(p.sprite)
+            if beat_listener<pbl:
+                song_phase+=1
+                beat_pulse=5
             for i in enemies:
                 i.exist(song_phase,p,projectiles,enemies)
                 if i.tips==1:
-                    for i1 in range(150):
+                    for i1 in range(30*level+30):
                         esprite=pygame.transform.rotate(i.sprite,90-i.memory[i1*4][2]/pi*180)
                         esprite.set_colorkey(i.sprite.get_colorkey())
                         S.blit(esprite,(i.memory[i1*4][0]-esprite.get_width()/2,i.memory[i1*4][1]-esprite.get_height()/2))
+                        if sqrt((i.memory[i1*4][1]-p.y)**2+(i.memory[i1*4][0]-p.x)**2)<25:
+                            p.hp-=1
                 else:
                     esprite=pygame.transform.rotate(i.sprite,90-i.angle/pi*180)
                     esprite.set_colorkey(i.sprite.get_colorkey())
                     S.blit(esprite,(i.x-esprite.get_width()/2,i.y-esprite.get_height()/2))
+                    if i.tips==3:
+                        Bmask=pygame.mask.from_surface(esprite)
+                        if Bmask.overlap(Pmask,(i.x-p.x,i.y-p.y)):
+                            p.hp-=2
             for i in projectiles:
                 i.exist(projectiles)
                 esprite=pygame.transform.rotate(i.sprite,270-i.angle/pi*180)
                 esprite.set_colorkey(i.sprite.get_colorkey())
                 S.blit(esprite,(i.x-esprite.get_width()/2,i.y-esprite.get_height()/2))
                 Bmask=pygame.mask.from_surface(esprite)
-                #if Bmask.overlap(Pmask,(i.x-p.x,i.y-p.y)):
-                #    p.hp-=10
-                #    i.despawn(projectiles)
-            p.exist(keys,mouse_down,mouse_pos,click,enemies)
+                if Bmask.overlap(Pmask,(i.x-p.x,i.y-p.y)):
+                    if i.tips==0:
+                        p.hp-=5
+                        i.despawn(projectiles)
+            p.exist(keys,mouse_down,mouse_pos,click,enemies,projectiles)
+            p.xspeed*=0.98
+            p.yspeed*=0.98 #slowig dow for extra fun
             psprite=pygame.transform.rotate(p.sprite,90-p.angle/pi*180)
             S.blit(psprite,(p.x-psprite.get_width()/2,p.y-psprite.get_height()/2))
             S2.blit(S.subsurface((min(max(p.x-150,0),1500),min(max(p.y-150,0),600),300,300)),(min(max(p.x-150,0),1500),min(max(p.y-150,0),600)))
@@ -231,7 +250,6 @@ while run:
             pygame.draw.rect(S2,(0,0,0),(p.x-300,p.y-300,600,150))
             pygame.draw.rect(S2,(0,0,0),(p.x+150,p.y-300,150,600))
             pygame.draw.rect(S2,(0,0,0),(p.x-300,p.y+150,600,150))
-            
             S2.blit(Graveyard_S,(p.x-150,p.y-150))
             pygame.draw.circle(S2,(255,255,255),(mouse_pos[0],mouse_pos[1]),5)
             if p.hp<=0:
@@ -240,7 +258,10 @@ while run:
                 pass
             else:
                 pygame.draw.rect(S2,(255-(p.hp/100*255),(p.hp/100*255),0),(0,0,20,p.hp))
-            
+            if beat_pulse>0:
+                Graveyard_S2.set_alpha(beat_pulse*10)
+                S2.blit(Graveyard_S2,(0,0))
+                beat_pulse-=1
             if tpassed>183:
                 level+=1
                 p.cores[1]+=level
@@ -254,3 +275,5 @@ while run:
         win.blit(pygame.transform.scale(S,winsize),(0,0))
     pygame.display.update()
 pygame.quit()
+
+
